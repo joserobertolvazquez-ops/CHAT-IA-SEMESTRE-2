@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Chat de IA </title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <style>
+    html, body { height: 100%; }
+    body { font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; background: #fff; color: #1f2328; }
+    .app { height: 100vh; }
+    .sidebar { width: 260px; background: #f7f7f8; border-right: 1px solid #e5e7eb; }
+    .sidebar .nav-link { color: #1f2328; border-radius: .5rem; padding: .5rem .75rem; }
+    .sidebar .nav-link:hover { background: #ececf0; }
+    .sidebar-note { font-size: .8rem; color: #5b6470; }
+    .main-area { min-width: 0; }
+    .prompt-box { max-width: 720px; width: 100%; border-radius: 2rem; border: 1px solid #d0d5dd; box-shadow: 0 2px 8px rgba(0,0,0,.06); }
+    .prompt-box:focus-within { border-color: #6b3a55; box-shadow: 0 0 0 .2rem rgba(107,58,85,.2); }
+    .prompt-box input { border: 0; box-shadow: none; background: transparent; }
+    .prompt-box input:focus { box-shadow: none; }
+    .suggestion { border-radius: 2rem; border: 1px solid #d0d5dd; background: #fff; color: #1f2328; }
+    .suggestion:hover, .suggestion:focus-visible { background: #f3e9ef; border-color: #6b3a55; }
+    /* El aviso queda al pie, pequeño y de bajo contraste (fuera del foco) */
+    .disclaimer { font-size: .72rem; color: #8a929c; }
+    .chat-log .bubble { max-width: 720px; }
+  </style>
+</head>
+<body>
+  <div class="app d-flex">
+
+    <!-- Barra lateral -->
+    <aside class="sidebar d-none d-md-flex flex-column p-3">
+      <h1 class="h6 mb-3">Asistente IA</h1>
+      <nav class="nav flex-column mb-auto">
+        <a class="nav-link" href="#" id="nuevoChat">Nuevo chat</a>
+        <a class="nav-link" href="#">Imágenes</a>
+        <a class="nav-link" href="#">Complementos</a>
+        <a class="nav-link" href="#">Investigar a fondo</a>
+      </nav>
+      <nav class="nav flex-column mb-3">
+        <a class="nav-link" href="#">Ver planes y precio</a>
+        <a class="nav-link" href="#">Configuración</a>
+        <a class="nav-link" href="#">Ayuda</a>
+      </nav>
+      <p class="sidebar-note mb-2">Inicia sesión para obtener respuestas basadas en chats guardados.</p>
+      <button class="btn btn-outline-dark btn-sm rounded-pill">Iniciar sesión</button>
+    </aside>
+
+    <!-- Área principal -->
+    <main class="main-area flex-grow-1 d-flex flex-column">
+
+      <header class="d-flex justify-content-between align-items-center p-3">
+        <span class="fw-semibold">Asistente IA</span>
+        <div class="d-flex gap-2">
+          <button class="btn btn-dark btn-sm rounded-pill">Iniciar sesión</button>
+          <button class="btn btn-outline-secondary btn-sm rounded-pill">Registrarte gratis</button>
+        </div>
+      </header>
+
+      <!-- Historial (aparece al enviar el primer mensaje) -->
+      <section id="chatLog" class="chat-log flex-grow-1 overflow-auto px-3 d-none" aria-live="polite">
+        <div class="mx-auto bubble" id="messages"></div>
+      </section>
+
+      <!-- Pantalla en blanco: pregunta + campo + sugerencias -->
+      <section id="empty" class="flex-grow-1 d-flex flex-column align-items-center justify-content-center px-3">
+        <h2 class="h3 mb-4 text-center">¿Por dónde empezamos?</h2>
+
+        <form id="promptForm" class="prompt-box d-flex align-items-center gap-2 px-3 py-1 bg-white">
+          <input id="promptInput" type="text" class="form-control py-3" placeholder="Pregúntale a la IA" aria-label="Escribe tu mensaje" autocomplete="off">
+          <button type="submit" class="btn btn-dark rounded-circle" style="width:38px;height:38px" aria-label="Enviar">↑</button>
+        </form>
+
+        <!-- Sugerencias iniciales: funcionan como un menú mínimo -->
+        <div class="d-flex flex-wrap justify-content-center gap-2 mt-4" style="max-width:720px" role="group" aria-label="Sugerencias">
+          <button type="button" class="btn suggestion btn-sm px-3 py-2" data-text="¿Qué puedes hacer?">¿Qué puedes hacer?</button>
+          <button type="button" class="btn suggestion btn-sm px-3 py-2" data-text="Explícame un tema de mi clase paso a paso">Explicar un tema</button>
+          <button type="button" class="btn suggestion btn-sm px-3 py-2" data-text="Ayúdame a corregir mi código HTML y CSS">Revisar código</button>
+          <button type="button" class="btn suggestion btn-sm px-3 py-2" data-text="Resume este texto en pocas líneas">Resumir un texto</button>
+          <button type="button" class="btn suggestion btn-sm px-3 py-2" data-text="Dame ideas para un proyecto escolar">Generar ideas</button>
+        </div>
+      </section>
+
+      <!-- Campo de entrada para cuando ya hay conversación -->
+      <div id="bottomInput" class="px-3 pb-2 d-none">
+        <form id="promptForm2" class="prompt-box d-flex align-items-center gap-2 px-3 py-1 bg-white mx-auto">
+          <input id="promptInput2" type="text" class="form-control py-3" placeholder="Pregúntale a la IA" aria-label="Escribe tu mensaje" autocomplete="off">
+          <button type="submit" class="btn btn-dark rounded-circle" style="width:38px;height:38px" aria-label="Enviar">↑</button>
+        </form>
+      </div>
+
+      <!-- Aviso al pie, fuera del foco -->
+      <footer class="text-center px-3 py-2">
+        <p class="disclaimer mb-0">Esto es una IA y puede equivocarse. Verifica la información.</p>
+      </footer>
+    </main>
+  </div>
+
+  <script>
+    const empty = document.getElementById('empty');
+    const chatLog = document.getElementById('chatLog');
+    const bottomInput = document.getElementById('bottomInput');
+    const messages = document.getElementById('messages');
+    const input1 = document.getElementById('promptInput');
+    const input2 = document.getElementById('promptInput2');
+
+    // Clic en una sugerencia: llena el campo (reconocer en vez de recordar)
+    document.querySelectorAll('.suggestion').forEach(btn => {
+      btn.addEventListener('click', () => {
+        input1.value = btn.dataset.text;
+        input1.focus();
+      });
+    });
+
+    function addMessage(text, who) {
+      const div = document.createElement('div');
+      div.className = 'my-3 d-flex ' + (who === 'user' ? 'justify-content-end' : 'justify-content-start');
+      const b = document.createElement('div');
+      b.className = 'px-3 py-2 rounded-4 ' + (who === 'user' ? 'bg-dark text-white' : 'bg-light');
+      b.textContent = text;
+      div.appendChild(b);
+      messages.appendChild(div);
+      chatLog.scrollTop = chatLog.scrollHeight;
+    }
+
+    function send(text) {
+      if (!text.trim()) return;
+      empty.classList.add('d-none');
+      chatLog.classList.remove('d-none');
+      bottomInput.classList.remove('d-none');
+      addMessage(text, 'user');
+      setTimeout(() => addMessage('Respuesta de ejemplo: aquí aparecería la respuesta de la IA.', 'ai'), 500);
+    }
+
+    document.getElementById('promptForm').addEventListener('submit', e => {
+      e.preventDefault(); send(input1.value); input1.value = '';
+    });
+    document.getElementById('promptForm2').addEventListener('submit', e => {
+      e.preventDefault(); send(input2.value); input2.value = '';
+    });
+
+    document.getElementById('nuevoChat').addEventListener('click', e => {
+      e.preventDefault();
+      messages.innerHTML = '';
+      chatLog.classList.add('d-none');
+      bottomInput.classList.add('d-none');
+      empty.classList.remove('d-none');
+    });
+  </script>
+</body>
+</html>
